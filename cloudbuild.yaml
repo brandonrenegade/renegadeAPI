@@ -1,0 +1,36 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        'gcr.io/$PROJECT_ID/renegade-fantasy-scheduler:$COMMIT_SHA',
+        '.',
+      ]
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/renegade-fantasy-scheduler:$COMMIT_SHA']
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'renegade-fantasy-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/renegade-fantasy-backend:$COMMIT_SHA'
+      - '--region'
+      - 'us-east1'
+      - '--set-env-vars=WEBHOOK_API_KEY=$_WEBHOOK_API_KEY'
+      - '--set-env-vars=REDIS_HOST=$_REDIS_HOST'
+      - '--set-env-vars=REDIS_PORT=$_REDIS_PORT'
+      - '--set-env-vars=REDIS_USER=$_REDIS_USER'
+      - '--set-env-vars=REDIS_PASSWORD=$_REDIS_PASSWORD'
+      - '--set-env-vars=ROUND_INTERVAL_SECONDS=$_ROUND_INTERVAL_SECONDS'
+      - '--set-env-vars=ABLY_API_KEY=$_ABLY_API_KEY'
+      - '--set-env-vars=BACKEND_URL=$_BACKEND_URL'
+images:
+  - 'gcr.io/$PROJECT_ID/renegade-fantasy-scheduler:$COMMIT_SHA'
+options:
+  logging: CLOUD_LOGGING_ONLY
